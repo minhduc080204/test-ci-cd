@@ -1,0 +1,30 @@
+name: Deploy to Windows Server
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Windows using WinRM
+        uses: microsoft/PowerShell-DSC/Invoke-PS/gh-actions@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            cd C:\inetpub\wwwroot\myproject
+            git pull
+            composer install --no-dev
+            php artisan migrate --force
+            npm install
+            npm run build
+            php artisan config:cache
+            php artisan route:cache
+            iisreset
